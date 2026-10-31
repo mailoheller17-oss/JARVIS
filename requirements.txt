@@ -1,0 +1,30 @@
+# Python
+# PyPI
+autopep8
+black
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+python-telegram-bot
+ffmpeg-python
+opencv-python
+numpy
+librosa
+pyscenedetect
+faster-whisper
+playwright
+pytrends
+beautifulsoup4
+readability-lxml
+duckduckgo-search
+httpx
+jinja2
+python-multipart
+pytz
+
+# Optional / Cloud / Fallback
+# Google Gemini: google-genai
+# OpenAI-compatible clients: openai
+# CLI: claude-code or Claude Code CLI (system-installed)

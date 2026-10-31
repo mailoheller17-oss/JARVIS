@@ -1,0 +1,31 @@
+# Bytecode / Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Local memory / user data
+Gedaechtnis/
+Kunden/
+tools/geld/kunden/
+Logs/
+Eingabe/
+Ausgabe/
+Browser-Profile/
+
+# Windows / binaries
+*.exe
+*.bak
+*.zip
+
+# IDE / OS files
+.DS_Store
+Thumbs.db
+
+# Git / repo local
+.git/
