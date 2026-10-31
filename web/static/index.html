@@ -1,0 +1,5 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Jarvis</title></head>
+<body style="background:#05070d;color:#7fe6ff;font-family:sans-serif">Jarvis lädt…
+<script>
+let boot=null;setInterval(async()=>{try{const r=await fetch('/api/version');const j=await r.json();if(boot&&j.boot!==boot)location.reload();boot=j.boot}catch(e){}},1500);
+</script></body></html>

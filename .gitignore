@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+web/server.log
+.env
+web/.pid
