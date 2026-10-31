@@ -60,22 +60,100 @@ function selectTile(t) {
   document.querySelectorAll(".tiles button").forEach((b) => b.classList.toggle("active", b.dataset.tile === t));
   $("#panel-money").hidden = t !== "money";
   $("#panel-status").hidden = t !== "status";
+  $("#panel-konnektoren").hidden = t !== "konnektoren";
+  $("#panel-settings").hidden = t !== "settings";
+  if (t === "konnektoren") loadKonnektoren();
   if (t === "money") renderMoney();
   if (t === "status") loadStatus();
-  if (MODE_INFO[t]) { mode = t; $("#msg").placeholder = MODE_INFO[t].ph; renderChat(); }
+  if (MODE_INFO[t]) { mode = t; $("#msg").placeholder = MODE_INFO[t].ph; renderChat(); renderChips(); }
+}
+
+// ---------- Quick-Chips ----------
+const CHIPS = {
+  chat: ["Wie wird das Wetter morgen?", "Was trendet gerade?", "/bild Gaming-Setup mit Neonlicht"],
+  edit: ["Skate-Montage im Herbst", "Fortnite-Highlights mit Bass-Drops", "/bild YouTube-Thumbnail, schockiertes Gesicht, Explosion"],
+  learn: ["Erklär mir Zinseszins", "Was ist ein ETF?", "Erklär mir, wie Algorithmen auf TikTok funktionieren"],
+};
+function renderChips() {
+  const box = $("#chips"); box.innerHTML = "";
+  (CHIPS[mode] || []).forEach((c) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = c;
+    b.onclick = () => { $("#msg").value = c; $("#chatForm").requestSubmit(); };
+    box.appendChild(b);
+  });
+}
+
+// ---------- Design ----------
+function setSkin(s) { document.documentElement.dataset.skin = s; store.set("jarvisSkin", s); $("#skinSelect").value = s; }
+$("#skinSelect").onchange = (e) => setSkin(e.target.value);
+setSkin(store.get("jarvisSkin", "ironman"));
+// ?skin=neon&tile=edit – für Screenshots/Direktlinks
+const qs = new URLSearchParams(location.search);
+if (qs.get("skin")) setSkin(qs.get("skin"));
+
+// ---------- Konnektoren ----------
+const KOSTEN = { "gratis": ["ok", "gratis"], "gratis-kontingent": ["ok", "Gratis-Kontingent"], "kostenpflichtig": ["paid", "kostenpflichtig"] };
+const STATUS = { verbunden: ["ok", "verbunden"], schluessel_fehlt: ["miss", "Schlüssel fehlt"], aus: ["off", "aus"] };
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function loadKonnektoren() {
+  const box = $("#konList"); box.textContent = "Lade…";
+  try {
+    const d = await api("/api/konnektoren");
+    $("#brainInfo").textContent = d.gehirn.length ? "Gehirn-Reihenfolge: " + d.gehirn.join(" → ") : "Noch kein KI-Gehirn verbunden – trag z. B. GEMINI_API_KEY ein.";
+    box.innerHTML = d.kategorien.map((k) => {
+      const list = d.konnektoren.filter((c) => c.kategorie === k);
+      if (!list.length) return "";
+      return `<h2 style="margin-top:14px">${esc(k)}</h2><div class="cards">` + list.map((c) => {
+        const [sc, st] = c.status === "schluessel_fehlt" && !c.env.length ? ["miss", "nicht bereit"] : STATUS[c.status];
+        const [kc, kt] = KOSTEN[c.kosten];
+        return `<div class="card" data-name="${esc(c.name)}">
+          <h3><span>${esc(c.titel)}</span><span class="badge ${sc}">${st}</span></h3>
+          <p>${esc(c.beschreibung)}</p>
+          <p><span class="badge ${kc}">${kt}</span> ${c.env.map((e) => `<code>${esc(e)}</code>`).join(" ")}</p>
+          ${c.kosten === "kostenpflichtig" ? `<p class="warn">⚠️ ${esc(c.hinweis || "Kostet Geld.")} Standardmäßig aus.</p>` : ""}
+          <div class="actions">
+            <button class="ghost" data-act="test">Testen</button>
+            <button class="ghost" data-act="toggle">${c.aktiv ? "Ausschalten" : "Einschalten"}</button>
+            <a href="${esc(c.key_url)}" target="_blank" rel="noopener">Schlüssel holen ↗</a>
+          </div>
+          <p class="hint res"></p>
+        </div>`;
+      }).join("") + "</div>";
+    }).join("");
+    box.querySelectorAll(".card button").forEach((b) => b.onclick = () => konAction(b, d.konnektoren.find((c) => c.name === b.closest(".card").dataset.name)));
+  } catch (e) { box.textContent = "Fehler: " + e.message; }
+}
+const pendingPaid = new Set();
+async function konAction(btn, c) {
+  const res = btn.closest(".card").querySelector(".res");
+  if (btn.dataset.act === "test") {
+    res.textContent = "Teste…";
+    const r = await api(`/api/konnektoren/${c.name}/test`, {});
+    res.textContent = (r.ok ? "✅ " : "❌ ") + r.meldung;
+    return;
+  }
+  if (!c.aktiv && c.kosten === "kostenpflichtig" && !pendingPaid.has(c.name)) {
+    pendingPaid.add(c.name);
+    res.textContent = "⚠️ Kostet echtes Geld/Credits. Nochmal „Einschalten“ drücken zum Bestätigen.";
+    return;
+  }
+  pendingPaid.delete(c.name);
+  await api(`/api/konnektoren/${c.name}/aktiv`, { aktiv: !c.aktiv });
+  loadKonnektoren();
 }
 
 // ---------- Chat ----------
-function addBubble(role, text) {
+function addBubble(role, text, image) {
   const d = document.createElement("div");
   d.className = "m " + role; d.textContent = text;
+  if (image) { const i = document.createElement("img"); i.src = image; i.alt = text; i.onload = () => { $("#chat").scrollTop = $("#chat").scrollHeight; }; d.appendChild(i); }
   $("#chat").appendChild(d); $("#chat").scrollTop = $("#chat").scrollHeight;
 }
 function renderChat() {
   $("#chat").innerHTML = "";
   const h = histories[mode];
   if (!h.length) addBubble("assistant", MODE_INFO[mode].hello);
-  h.forEach((m) => addBubble(m.role, m.content));
+  h.forEach((m) => addBubble(m.role, m.content, m.image));
 }
 function orb(state) { $("#orb").className = "orb " + (state || ""); }
 
@@ -88,15 +166,15 @@ $("#chatForm").onsubmit = async (e) => {
   h.push({ role: "user", content: text }); addBubble("user", text);
   orb("thinking");
   try {
-    const r = await api("/api/chat", { messages: h.slice(-20), mode });
-    h.push({ role: "assistant", content: r.reply }); addBubble("assistant", r.reply);
+    const r = await api("/api/chat", { messages: h.slice(-20).map(({ role, content }) => ({ role, content })), mode });
+    h.push({ role: "assistant", content: r.reply, ...(r.image ? { image: r.image } : {}) }); addBubble("assistant", r.reply, r.image);
     $("#provider").textContent = r.provider;
     store.set("jarvisHist", histories);
     speak(r.reply);
   } catch (err) {
     h.pop();
     if (err.message !== "401") addBubble("sys", "Fehler: " + err.message);
-  } finally { if (!speechSynthesis?.speaking) orb(); }
+  } finally { if (!speechSynthesis?.speaking && (!audio || audio.paused)) orb(); }
 };
 
 // ---------- Speech in (Web Speech API) ----------
@@ -114,7 +192,7 @@ $("#mic").onclick = () => {
   };
   rec.onerror = (e) => addBubble("sys", "Mikro: " + e.error);
   rec.onend = () => { rec = null; $("#mic").classList.remove("on"); orb(); };
-  speechSynthesis?.cancel();
+  speechSynthesis?.cancel(); audio?.pause();
   rec.start(); $("#mic").classList.add("on"); orb("listening");
 };
 
@@ -123,13 +201,27 @@ let ttsOn = store.get("jarvisTts", true);
 const ttsBtn = $("#ttsToggle");
 const syncTts = () => { ttsBtn.textContent = ttsOn ? "🔊" : "🔇"; ttsBtn.classList.toggle("off", !ttsOn); };
 syncTts();
-ttsBtn.onclick = () => { ttsOn = !ttsOn; store.set("jarvisTts", ttsOn); syncTts(); if (!ttsOn) speechSynthesis?.cancel(); };
+ttsBtn.onclick = () => { ttsOn = !ttsOn; store.set("jarvisTts", ttsOn); syncTts(); if (!ttsOn) { speechSynthesis?.cancel(); audio?.pause(); } };
 function germanVoice() {
   const v = speechSynthesis.getVoices().filter((v) => v.lang?.toLowerCase().startsWith("de"));
   return v.find((x) => /google|natural|neural|anna|helena|markus/i.test(x.name)) || v[0];
 }
-function speak(text) {
-  if (!ttsOn || !window.speechSynthesis) return orb();
+let audio = null;
+async function speak(text) {
+  if (!ttsOn) return orb();
+  audio?.pause(); speechSynthesis?.cancel();
+  try {
+    const r = await fetch("/api/tts", { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+    if (r.ok) {
+      audio = new Audio(URL.createObjectURL(await r.blob()));
+      audio.onplay = () => orb("speaking"); audio.onended = audio.onerror = () => orb();
+      await audio.play(); return;
+    }
+  } catch {}
+  browserSpeak(text);
+}
+function browserSpeak(text) {
+  if (!window.speechSynthesis) return orb();
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text.replace(/[*#_`>]/g, ""));
   u.lang = "de-DE"; const v = germanVoice(); if (v) u.voice = v;
@@ -170,17 +262,17 @@ async function loadStatus() {
     ul.innerHTML =
       Object.entries(s.keys).map(([k, v]) => row(k, v)).join("") +
       Object.entries(s.tools).map(([k, v]) => row("Werkzeug: " + k, v)).join("") +
-      row("Browser: Spracherkennung", !!SR) + row("Browser: Vorlesen", !!window.speechSynthesis);
+      row("Browser: Spracherkennung", !!SR) + row("Browser: Vorlesen", !!window.speechSynthesis) +
+      `<li><span>Gehirn</span><span>${s.gehirn.length ? s.gehirn.join(" → ") : "Demo"}</span></li>`;
   } catch (e) { ul.innerHTML = `<li>Fehler: ${e.message}</li>`; }
 }
 
 // ---------- Start ----------
 function startApp() {
   $("#login").hidden = true; $("#app").hidden = false;
-  selectTile("chat");
+  selectTile(qs.get("tile") || "chat");
   api("/api/status").then((s) => {
-    const any = s.keys.GEMINI_API_KEY || s.keys.GROQ_API_KEY;
-    $("#provider").textContent = any ? (s.keys.GEMINI_API_KEY ? "Gemini" : "Groq") : "demo";
+    $("#provider").textContent = s.gehirn[0] || "demo";
   }).catch(() => {});
 }
 (async () => { if (token && await tryLogin(token)) startApp(); else showLogin(); })();

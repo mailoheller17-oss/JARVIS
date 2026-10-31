@@ -9,7 +9,7 @@ if [ -z "$JARVIS_WEB_TOKEN" ]; then
   export JARVIS_DEV_TOKEN="${JARVIS_DEV_TOKEN:-dev-$(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' \n')}"
   echo "Kein JARVIS_WEB_TOKEN gesetzt -> Dev-Token: $JARVIS_DEV_TOKEN" | tee .devtoken
 fi
-nohup python3 -m uvicorn app:app --host 0.0.0.0 --port 8765 --reload \
+nohup python3 -m uvicorn app:app --host 0.0.0.0 --port 8765 --reload --reload-dir . --reload-dir ../tools \
   --reload-include '*.html' --reload-include '*.js' --reload-include '*.css' --reload-include '*.json' \
   > server.log 2>&1 &
 echo $! > .pid

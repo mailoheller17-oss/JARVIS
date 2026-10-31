@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-skin="ironman">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -11,6 +11,7 @@
 <link rel="icon" href="/static/icon.svg">
 <link rel="apple-touch-icon" href="/static/icon.svg">
 <link rel="stylesheet" href="/static/style.css">
+<script>try{document.documentElement.dataset.skin=JSON.parse(localStorage.getItem("jarvisSkin"))||"ironman"}catch(e){}</script>
 </head>
 <body>
 <!-- Login -->
@@ -41,6 +42,8 @@
     <button data-tile="learn">🧠<span>Lernen</span></button>
     <button data-tile="money">💰<span>Geld</span></button>
     <button data-tile="status">📡<span>Status</span></button>
+    <button data-tile="konnektoren">🔌<span>Konnekt.</span></button>
+    <button data-tile="settings">⚙️<span>Design</span></button>
   </nav>
 
   <section id="panel-money" class="panel" hidden>
@@ -63,6 +66,26 @@
     <ul id="statusList"></ul>
   </section>
 
+  <section id="panel-konnektoren" class="panel" hidden>
+    <h2>Konnektoren</h2>
+    <p class="hint" id="brainInfo"></p>
+    <div id="konList"></div>
+  </section>
+
+  <section id="panel-settings" class="panel" hidden>
+    <h2>Einstellungen</h2>
+    <div class="row">
+      <label for="skinSelect" class="hint" style="align-self:center">Design</label>
+      <select id="skinSelect">
+        <option value="ironman">Iron-Man-Blau</option>
+        <option value="minimal">Dunkel-Minimal</option>
+        <option value="neon">Neon-Gaming</option>
+      </select>
+    </div>
+    <p class="hint">Stimme: ElevenLabs → Edge-TTS → Browser (automatisch). <a href="/vorschau" style="color:var(--cyan)">Alle Vorschaubilder ansehen</a></p>
+  </section>
+
+  <div class="chips" id="chips"></div>
   <section id="chat" aria-live="polite"></section>
 
   <form id="chatForm">
