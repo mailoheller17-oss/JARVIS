@@ -3,3 +3,4 @@ __pycache__/
 web/server.log
 .env
 web/.pid
+web/.devtoken
