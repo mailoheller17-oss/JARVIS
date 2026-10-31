@@ -10,4 +10,4 @@ key_url = "https://de.wikipedia.org"
 
 
 def test():
-    return http_test("https://de.wikipedia.org/api/rest_v1/page/summary/Jarvis", headers={"User-Agent": "JarvisApp/1.0"})
+    return http_test("https://de.wikipedia.org/api/rest_v1/page/summary/Jarvis", headers={"User-Agent": "JarvisApp/1.0 (https://github.com/mailoheller17-oss/JARVIS; persoenlicher Assistent)"})

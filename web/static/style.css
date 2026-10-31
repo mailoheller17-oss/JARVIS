@@ -122,3 +122,17 @@ select { background: var(--panel); border: 1px solid var(--line); border-radius:
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 8px; }
 .chips button { background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; font-size: 13px; color: var(--text); }
 .m img { max-width: 100%; border-radius: 10px; display: block; margin-top: 6px; }
+
+/* Layout-Fixes nach Screenshot-Check */
+.tiles, .chips, .panel, header, #chatForm { flex: none; }
+.badge { flex: none; }
+.chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.chips button { flex: none; white-space: nowrap; }
+@media (max-width: 520px) {
+  .tiles { grid-auto-columns: 1fr; gap: 4px; overflow: visible; }
+  .tiles button { padding: 6px 0; font-size: 17px; }
+  .tiles button span { font-size: 10px; }
+}
+.card h3 { align-items: flex-start; }
+.panel:not([hidden]) { flex: 1 1 auto; max-height: none; min-height: 0; }
+#panel-money:not([hidden]), #panel-settings:not([hidden]) { flex: none; }

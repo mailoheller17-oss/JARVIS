@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
-UA = {"User-Agent": "JarvisApp/1.0 (privat)"}
+UA = {"User-Agent": "JarvisApp/1.0 (https://github.com/mailoheller17-oss/JARVIS; persoenlicher Assistent)"}
 WMO = {0: "klar", 1: "meist klar", 2: "teils bewölkt", 3: "bedeckt", 45: "Nebel", 48: "Nebel", 51: "Niesel",
        53: "Niesel", 55: "Niesel", 61: "leichter Regen", 63: "Regen", 65: "starker Regen", 71: "Schnee",
        73: "Schnee", 75: "viel Schnee", 80: "Schauer", 81: "Schauer", 82: "heftige Schauer", 95: "Gewitter"}

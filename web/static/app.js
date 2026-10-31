@@ -62,6 +62,8 @@ function selectTile(t) {
   $("#panel-status").hidden = t !== "status";
   $("#panel-konnektoren").hidden = t !== "konnektoren";
   $("#panel-settings").hidden = t !== "settings";
+  $("#chips").hidden = !MODE_INFO[t];
+  $("#chat").hidden = t === "konnektoren" || t === "status";
   if (t === "konnektoren") loadKonnektoren();
   if (t === "money") renderMoney();
   if (t === "status") loadStatus();
@@ -114,7 +116,7 @@ async function loadKonnektoren() {
           <div class="actions">
             <button class="ghost" data-act="test">Testen</button>
             <button class="ghost" data-act="toggle">${c.aktiv ? "Ausschalten" : "Einschalten"}</button>
-            <a href="${esc(c.key_url)}" target="_blank" rel="noopener">Schlüssel holen ↗</a>
+            <a href="${esc(c.key_url)}" target="_blank" rel="noopener">${c.env.length ? "Schlüssel holen ↗" : "Webseite ↗"}</a>
           </div>
           <p class="hint res"></p>
         </div>`;
