@@ -1,5 +1,6 @@
 import asyncio
 import hmac
+import re
 import os
 import shutil
 import sys
@@ -88,11 +89,12 @@ async def ask(messages: list[dict], live: list[str]) -> tuple[str, str]:
     brains = K.gehirne()
     if not brains:
         last = messages[-1]["content"] if messages else ""
-        info = ("\n\n" + "\n".join(live)) if live else ""
+        if live:  # Live-Daten gibt's auch ohne KI – direkt ausgeben
+            return ("\n\n".join(live) + "\n\n(Demo-Modus: Mit GEMINI_API_KEY fasse ich dir das locker zusammen.)", "demo")
         return (
             "Demo-Modus, Mailo 😉 Mir fehlt ein KI-Schlüssel – am einfachsten GEMINI_API_KEY "
             "(gratis: aistudio.google.com/apikey) oder GROQ_API_KEY. Danach web/start.sh neu starten. "
-            f"Du hast gesagt: „{last[:120]}“{info}",
+            f"Du hast gesagt: „{last[:120]}“",
             "demo",
         )
     errors = []
@@ -120,8 +122,13 @@ def bild_url(prompt: str) -> str:
     return f"https://image.pollinations.ai/prompt/{q}?width=1280&height=720&nologo=true&seed={int(time.time()) % 99999}"
 
 
+JARVIS_PREFIX = re.compile(r"^\s*(hey |hi |ok |okay )?(jarvis|javis|jarvi|jervis)[\s,.:!]*", re.I)
+
+
 @app.post("/api/chat", dependencies=[Depends(require_auth)])
 async def chat(body: ChatIn):
+    if body.messages:
+        body.messages[-1].content = JARVIS_PREFIX.sub("", body.messages[-1].content).strip() or body.messages[-1].content
     last = body.messages[-1].content.strip() if body.messages else ""
     # /bild <beschreibung> -> Thumbnail über Pollinations (gratis, ohne Schlüssel)
     if last.lower().startswith(("/bild", "/thumbnail")):
@@ -134,6 +141,9 @@ async def chat(body: ChatIn):
     system = PERSONA + ("\n\n" + MODES[body.mode] if MODES.get(body.mode) else "")
     if live:
         system += "\n\nLive-Daten:\n" + "\n".join(live)
+        if any(x.startswith("Aktuelle Top-Meldungen") for x in live):
+            system += ("\n\nFasse die Nachrichten als lockeres Briefing zusammen: 5-7 kurze Punkte mit passendem Emoji, "
+                       "Wichtigstes zuerst, je 1 Satz. Am Ende ein kurzer Satz, was davon für Mailo interessant sein könnte.")
     msgs = [{"role": "system", "content": system}] + [
         {"role": m.role if m.role in ("user", "assistant") else "user", "content": m.content}
         for m in body.messages[-20:]

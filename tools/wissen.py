@@ -53,11 +53,50 @@ async def trends(c: httpx.AsyncClient, text: str) -> str | None:
     return "Google-Trends Deutschland gerade: " + ", ".join(t for t in titles if t)
 
 
+NEWS_RE = re.compile(r"nachricht|news|schlagzeile|was ging|was geht in der welt|was ist (heute |gestern |heute nacht )?passiert|"
+                     r"in der welt|weltgeschehen|was gibt.s neues|aktuell(es|e lage)|heute nacht", re.I)
+
+
+async def nachrichten_liste(c: httpx.AsyncClient, n: int = 9) -> list[dict]:
+    """Top-Meldungen: tagesschau (ohne Schlüssel), Fallback Google-News-RSS."""
+    items = []
+    try:
+        r = await c.get("https://www.tagesschau.de/api2u/homepage/", headers={"User-Agent": "Mozilla/5.0"})
+        for x in r.json().get("news", []):
+            if x.get("title") and x.get("ressort") in ("inland", "ausland", "wirtschaft", "wissen", "sport", None):
+                if "wetter" in x["title"].lower() or "temperaturen" in x["title"].lower():
+                    continue
+                items.append({"titel": x["title"], "text": (x.get("firstSentence") or "").strip(),
+                              "bereich": x.get("ressort") or "sport", "link": x.get("shareURL") or x.get("detailsweb", "")})
+    except Exception:
+        pass
+    if len(items) < 5:
+        try:
+            r = await c.get("https://news.google.com/rss?hl=de&gl=DE&ceid=DE:de", headers=UA)
+            for i in ET.fromstring(r.text).iter("item"):
+                items.append({"titel": i.findtext("title") or "", "text": "", "bereich": "welt", "link": i.findtext("link") or ""})
+        except Exception:
+            pass
+    return items[:n]
+
+
+async def nachrichten(c: httpx.AsyncClient, text: str) -> str | None:
+    if not NEWS_RE.search(text):
+        return None
+    items = await nachrichten_liste(c)
+    if not items:
+        return None
+    return "Aktuelle Top-Meldungen (tagesschau):\n" + "\n".join(
+        f"- [{i['bereich']}] {i['titel']}" + (f": {i['text']}" if i["text"] else "") for i in items)
+
+
 async def kontext(text: str) -> list[str]:
     out = []
     async with httpx.AsyncClient(timeout=8, follow_redirects=True) as c:
-        for fn in (wetter, wiki, trends):
+        for fn in (nachrichten, wetter, wiki, trends):
             if fn is wetter and not re.search(r"wetter|regen|temperatur|grad drau", text, re.I):
+                continue
+            if fn is wiki and NEWS_RE.search(text):
                 continue
             try:
                 r = await fn(c, text)
