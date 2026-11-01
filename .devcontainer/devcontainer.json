@@ -1,0 +1,13 @@
+{
+  "name": "Jarvis",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": { "label": "Jarvis", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core && pip install -r web/requirements.txt",
+  "postStartCommand": "bash web/start.sh",
+  "customizations": {
+    "codespaces": { "openFiles": ["docs/MORGEN.md"] }
+  }
+}

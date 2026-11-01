@@ -36,9 +36,8 @@ DEMO = {
 def token() -> str:
     t = os.environ.get("JARVIS_WEB_TOKEN")
     if not t:
-        f = ROOT / "web" / ".devtoken"
-        m = re.search(r"dev-[0-9a-f]+", f.read_text()) if f.exists() else None
-        t = m.group(0) if m else ""
+        f = ROOT / "data" / ".devtoken"
+        t = f.read_text().strip() if f.exists() else ""
     if not t:
         sys.exit("Kein Token gefunden. Erst web/start.sh ausführen.")
     return t

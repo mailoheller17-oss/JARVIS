@@ -18,6 +18,14 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").cat
 
 // ---------- Auth ----------
 let token = store.get("jarvisToken", "");
+// Magic-Link: /?t=TOKEN loggt automatisch ein und entfernt den Token sofort aus der Adresszeile
+{
+  const u = new URL(location.href);
+  if (u.searchParams.get("t")) {
+    token = u.searchParams.get("t"); store.set("jarvisToken", token);
+    u.searchParams.delete("t"); history.replaceState(null, "", u.pathname + u.search + u.hash);
+  }
+}
 const api = async (path, body) => {
   const r = await fetch(path, {
     method: body === undefined ? "GET" : "POST",
