@@ -71,15 +71,19 @@ def main():
                 nonlocal n
                 page.goto(url)
                 page.wait_for_selector("#app:not([hidden])", timeout=10000)
-                page.wait_for_timeout(1500)  # Animation + Daten
+                try:
+                    page.wait_for_function("document.querySelector('#hudCon').textContent !== '–'", timeout=12000)
+                except Exception:
+                    pass
+                page.wait_for_timeout(1500)  # Animation
                 page.screenshot(path=OUT / f"{name}-{geraet}.png")
                 n += 1
 
 
             for k in KACHELN:
-                shot(NAMEN.get(k, k), f"{URL}/?tile={k}&skin=ironman")
+                shot(NAMEN.get(k, k), f"{URL}/?tile={k}&skin=ironman&noboot=1")
             for s in SKINS:
-                shot(f"design-{s}", f"{URL}/?tile=chat&skin={s}")
+                shot(f"design-{s}", f"{URL}/?tile=chat&skin={s}&noboot=1")
             ctx.close()
         browser.close()
     print(f"{n} Screenshots in {OUT.relative_to(ROOT)}/  ->  {URL}/vorschau")

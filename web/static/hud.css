@@ -1,0 +1,118 @@
+/* ===== J.A.R.V.I.S. HUD – inspiriert von Holo-Interfaces ===== */
+[data-skin="ironman"] {
+  --bg: #01070c; --panel: rgba(6, 28, 40, .55); --line: rgba(111, 243, 255, .22); --cyan: #6ff3ff; --cyan2: #c8fbff;
+  --text: #d9fbff; --muted: #6aa6b5; --me: rgba(255, 181, 71, .12); --glow: #04283a; --accent-ink: #00141c;
+  --gold: #ffb547; --alert: #ff4d4d;
+  --font: "Rajdhani", "Segoe UI", system-ui, sans-serif; --hud-font: "Orbitron", "Rajdhani", system-ui, sans-serif;
+}
+:root { --gold: #ffb547; --alert: #ff4d6d; --hud-font: var(--font); --lvl: 0; }
+
+/* Hintergrund: Raster + Scanlines + Vignette */
+.hud-bg { position: fixed; inset: 0; pointer-events: none; z-index: -1; }
+[data-skin="ironman"] .hud-bg {
+  background:
+    radial-gradient(ellipse at 50% 22%, rgba(111, 243, 255, .16), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(111, 243, 255, .035) 0 1px, transparent 1px 4px),
+    linear-gradient(rgba(111, 243, 255, .05) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, rgba(111, 243, 255, .05) 1px, transparent 1px) 0 0 / 40px 40px,
+    radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, .7));
+}
+[data-skin="ironman"] body { background: var(--bg); }
+
+/* Typo */
+.brand, #login h1, .readout small, .readout b, .panel h2, .pill { font-family: var(--hud-font); }
+[data-skin="ironman"] .brand { letter-spacing: .35em; font-size: 15px; text-shadow: 0 0 12px var(--cyan); }
+[data-skin="ironman"] #login h1 { letter-spacing: .3em; font-size: 26px; text-shadow: 0 0 18px var(--cyan); }
+
+/* ===== Reaktor (SVG) ===== */
+.orb.reactor { width: 210px; height: 210px; margin: 0 auto; flex: none; position: relative; }
+.orb.reactor.small { width: 150px; height: 150px; }
+.orb.reactor svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px var(--cyan)); }
+.orb.reactor .r { transform-box: fill-box; transform-origin: center; fill: none; stroke: var(--cyan); }
+.orb.reactor .r1 { stroke-width: 1; opacity: .55; animation: spin 40s linear infinite; }
+.orb.reactor .r2 { stroke-width: 3; opacity: .85; animation: spin 18s linear infinite reverse; }
+.orb.reactor .r3 { stroke-width: 1; opacity: .35; }
+.orb.reactor .r4 { stroke-width: 7; opacity: .9; animation: spin 6s linear infinite; }
+.orb.reactor .r5 { stroke-width: 9; opacity: .35; animation: spin 24s linear infinite reverse; }
+.orb.reactor .r6 { stroke: var(--gold); stroke-width: 3; opacity: .9; animation: spin 9s linear infinite; }
+.orb.reactor .r7 { stroke-width: 2; opacity: .8; animation: spin 3s linear infinite reverse; }
+.orb.reactor .tri { fill: none; stroke: var(--cyan2); stroke-width: 2; opacity: .7; transform-box: fill-box; transform-origin: center; animation: spin 14s linear infinite; }
+.orb.reactor .core { transform-box: fill-box; transform-origin: center;
+  transform: scale(calc(1 + var(--lvl) * .45)); transition: transform .06s; animation: breathe 2.6s ease-in-out infinite; }
+.orb.reactor .halo { opacity: calc(.55 + var(--lvl)); }
+@keyframes breathe { 50% { opacity: .82; } }
+.orb.thinking .r4 { animation-duration: 1s; } .orb.thinking .r2 { animation-duration: 4s; } .orb.thinking .r7 { animation-duration: .6s; }
+.orb.thinking .r6 { stroke: var(--cyan2); animation-duration: 1.4s; }
+.orb.listening .r, .orb.listening .tri { stroke: var(--alert); }
+.orb.listening svg { filter: drop-shadow(0 0 10px var(--alert)); }
+.orb.listening .core { animation: breathe .6s ease-in-out infinite; }
+.orb.speaking .r4 { animation-duration: 2s; }
+@media (prefers-reduced-motion: reduce) { .orb.reactor * { animation: none !important; } }
+
+/* Bühne mit Seiten-Readouts */
+.stage { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin: 4px 0 10px; flex: none; }
+.readout { display: flex; flex-direction: column; gap: 10px; font-size: 12px; min-width: 0; }
+.readout.left { align-items: flex-end; text-align: right; }
+.readout div { display: flex; flex-direction: column; border-right: 2px solid var(--line); padding: 2px 10px; min-width: 0; }
+.readout.right div { border-right: 0; border-left: 2px solid var(--line); }
+.readout small { color: var(--muted); font-size: 9px; letter-spacing: .25em; }
+.readout b { color: var(--cyan); font-weight: 400; font-size: 13px; letter-spacing: .05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.readout b.ok { color: #5dff9d; text-shadow: 0 0 8px #5dff9d88; }
+@media (max-width: 620px) {
+  .stage { grid-template-columns: 1fr auto 1fr; gap: 4px; }
+  .orb.reactor { width: 150px; height: 150px; }
+  .readout { gap: 6px; }
+  .readout div { padding: 1px 6px; }
+  .readout small { font-size: 8px; letter-spacing: .15em; }
+  .readout b { font-size: 11px; }
+}
+
+/* Laufband (Nachrichten) */
+.ticker { overflow: hidden; white-space: nowrap; border-block: 1px solid var(--line); font-size: 13px; color: var(--muted); padding: 3px 0; margin-bottom: 8px; flex: none;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.ticker span { display: inline-block; padding-left: 100%; animation: tick 70s linear infinite; }
+@keyframes tick { to { transform: translateX(-100%); } }
+
+/* Holo-Paneele mit Eckklammern + abgeschrägten Ecken */
+[data-skin="ironman"] .panel, [data-skin="ironman"] .tiles button, [data-skin="ironman"] .m.assistant, [data-skin="ironman"] .card {
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+[data-skin="ironman"] .panel { position: relative; border-radius: 4px;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px)); }
+[data-skin="ironman"] .panel h2 { letter-spacing: .2em; font-size: 12px; text-transform: uppercase; }
+[data-skin="ironman"] .panel h2::before { content: "▸ "; color: var(--gold); }
+[data-skin="ironman"] .tiles button { border-radius: 4px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+[data-skin="ironman"] .tiles button span { font-family: var(--hud-font); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+[data-skin="ironman"] .tiles button.active { background: rgba(111, 243, 255, .12); box-shadow: 0 0 18px rgba(111, 243, 255, .35) inset; }
+[data-skin="ironman"] .m { border-radius: 3px; font-size: 16px; }
+[data-skin="ironman"] .m.assistant { border-left: 2px solid var(--cyan); background: rgba(6, 28, 40, .6); }
+[data-skin="ironman"] .m.assistant::before { content: "JARVIS ›"; display: block; font: 9px var(--hud-font); letter-spacing: .25em; color: var(--cyan); opacity: .8; margin-bottom: 4px; }
+[data-skin="ironman"] .m.user { border-right: 2px solid var(--gold); background: var(--me); }
+[data-skin="ironman"] input, [data-skin="ironman"] select { border-radius: 3px; background: rgba(4, 20, 30, .7); }
+[data-skin="ironman"] #send { border-radius: 3px; box-shadow: 0 0 16px rgba(111, 243, 255, .5); }
+[data-skin="ironman"] .icon { border-radius: 3px; }
+[data-skin="ironman"] #mic { border-color: var(--gold); color: var(--gold); }
+[data-skin="ironman"] #mic.on { background: var(--alert); border-color: var(--alert); box-shadow: 0 0 18px var(--alert); }
+[data-skin="ironman"] .chips button { border-radius: 3px; font-family: var(--font); }
+[data-skin="ironman"] .pill { font-size: 10px; letter-spacing: .15em; border-radius: 3px; color: var(--cyan); }
+
+/* Boot-Sequenz */
+#boot { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .6s; }
+#boot.out { opacity: 0; pointer-events: none; }
+#bootLog { font: 12px/1.7 var(--hud-font); color: var(--cyan); letter-spacing: .12em; min-height: 8em; width: min(360px, 90vw); margin: 0; white-space: pre-wrap; }
+
+/* Video-Ergebnisse */
+.m video { width: 100%; max-width: 320px; border-radius: 6px; display: block; margin-top: 8px; border: 1px solid var(--line); background: #000; }
+.m .vbtns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.m .vbtns a, .m .vbtns button { font-size: 13px; border: 1px solid var(--cyan); color: var(--cyan); background: transparent; border-radius: 3px; padding: 6px 10px; text-decoration: none; }
+.m .progress { height: 4px; background: var(--line); margin-top: 8px; overflow: hidden; }
+.m .progress i { display: block; height: 100%; width: 0; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); transition: width .4s; }
+.tiles button svg { color: var(--cyan); opacity: .75; }
+.tiles button.active svg { opacity: 1; filter: drop-shadow(0 0 4px var(--cyan)); }
+@media (min-width: 900px) {
+  [data-skin="ironman"] #app { max-width: 1000px; }
+  .orb.reactor:not(.small) { width: 260px; height: 260px; }
+  .readout b { font-size: 16px; }
+  .readout small { font-size: 10px; }
+}

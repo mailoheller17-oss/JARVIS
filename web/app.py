@@ -232,6 +232,35 @@ def status():
     return {"keys": keys, "tools": tools, "gehirn": [m.titel for m in K.gehirne()], "verbunden": verbunden}
 
 
+_hud_cache: dict = {"t": 0, "data": {}}
+
+
+@app.get("/api/hud", dependencies=[Depends(require_auth)])
+async def hud():
+    alle = K.alle()
+    gehirne = K.gehirne()
+    data = {"gehirn": gehirne[0].titel if gehirne else "", "gesamt": len(alle),
+            "verbunden": sum(K.status(m) == "verbunden" for m in alle)}
+    if time.time() - _hud_cache["t"] > 600:
+        extra = {}
+        async with httpx.AsyncClient(timeout=6, follow_redirects=True) as c:
+            try:
+                w = await wissen.wetter(c, "wetter")
+                if w:  # "Wetter Berlin: jetzt 9.3°C, leichter Regen, ..." -> "BERLIN 9°C"
+                    m = re.match(r"Wetter (.+?): jetzt ([\d.-]+)°C, ([^,]+)", w)
+                    extra["wetter"] = f"{m.group(1).upper()} {round(float(m.group(2)))}°C" if m else ""
+                    extra["wetter_lang"] = w
+            except Exception:
+                pass
+            try:
+                extra["schlagzeilen"] = [i["titel"] for i in await wissen.nachrichten_liste(c, 8)]
+            except Exception:
+                pass
+        # unvollständig? dann in 1 Minute nochmal versuchen statt 10
+        _hud_cache.update(t=time.time() - (0 if extra.get("wetter") and extra.get("schlagzeilen") else 540), data=extra)
+    return {**_hud_cache["data"], **data}
+
+
 @app.post("/api/login")
 def login(authorization: str = Header(default="")):
     require_auth(authorization)
